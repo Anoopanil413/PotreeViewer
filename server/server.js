@@ -12,13 +12,14 @@ import fs from 'fs';
 
 import {exec} from 'child_process'
 import { supabase } from './supabase/supabase.js'
+import { uploadFileToBucket } from './utils/utilities.js'
 
 
 
 const app = express();
 
 // app.use('/Public/metadata.json', express.static(path.join(__dirname, 'Public/Data/pointclouds/potreetest')));
-app.use(cors({origin:'http://localhost:5174'}));
+app.use(cors({origin:'http://localhost:5173'}));
 app.use(fileUpload());
 
 // const __filename = fileURLToPath(import.meta.url);
@@ -31,10 +32,14 @@ app.use(fileUpload());
 
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-console.log("uploadsDir",__dirname)
 // app.use(express.static(path.join(__dirname ,'uploads')));
 
 const storagepath = path.join(__dirname ,'uploads')
+
+const filestoragepath = path.join(__dirname, 'Public', 'Data');
+
+
+app.use( express.static(filestoragepath));
 
 
 
@@ -65,15 +70,15 @@ app.post('/upload', (req, res) => {
         return res.status(500).send(err);
       }
   
-      res.send('File uploaded successfully!');
+      res.status(200).send('File uploaded successfully!');
     });
   });
 
   app.post('/uploadcomplete',async(req,res)=>{
     const {fileName} = req.body;
 
-    console.log('fileName',fileName)
-    try {
+    console.log(fileName,"fileName")
+
 
         const exePath = path.join(__dirname,'PotreeConverter/PotreeConverter.exe');
         const filePathToBeconverted = path.join(storagepath,fileName)
@@ -89,19 +94,22 @@ app.post('/upload', (req, res) => {
           fs.mkdirSync(outputDir, { recursive: true });
         }
 
-        const command = `"${exePath}" "${filePathToBeconverted}" -o "${outputDir}" --generate-page potreetest`;
+        console.log("exePath",exePath,"filePathToBeconverted",filePathToBeconverted,"outputDir",outputDir)
+
+        // const command = `"${exePath}" "${filePathToBeconverted}" -o "${outputDir}" --generate-page potreetest`;
+        const command = `"${exePath}" "${filePathToBeconverted}" -o "${outputDir}"`;
 
         exec(command, async(error, stdout, stderr) => {
             if (error) {
               console.error(`exec error: ${error}`);
 
-              res.status(500).json({message:'failed to convert file'})
+             return res.status(500).json({message:'failed to convert file'})
       
             }
             // res.status(200).json({message:stdout});
 
             if(stdout){
-                const metadatapath = path.join(outputDir,'pointclouds','potreetest','metadata.json')
+                const metadatapath = path.join(outputDir,'metadata.json')
 
                 if (!fs.existsSync(metadatapath)) {
                     return res.status(404).send('File not found on server.');
@@ -109,20 +117,15 @@ app.post('/upload', (req, res) => {
 
                   const fileBuffer = fs.readFileSync(metadatapath);
 
-                  // Upload file to Supabase Storage
-                  const { data, error } = await supabase.storage
-                    .from('Potree_viewer') 
-                    .upload(`folder/${fileName}`, fileBuffer, {
-                      cacheControl: '3600',
-                      upsert: false,
-                    });
+                  const dataUploaded = await uploadFileToBucket(fileBuffer,fileName)
 
-                    if(error){
+                    if(!dataUploaded){
+                      console.log("errorerrorerrorerrorerror",error)
                         return res.status(404).send('file convertion failed');
                     }
 
 
-                    console.log("data",data,'getting publicUrl',publicUrl);
+                    // console.log("data",data,'getting publicUrl',publicUrl);
                     const publicUrl = `${supabase.storage.from('Potree_viewer').getPublicUrl(`folder/${fileName}/metadata.json`).data.publicUrl}`;
 
 
@@ -134,10 +137,7 @@ app.post('/upload', (req, res) => {
 
           });
 
-        
-    } catch (error) {
-        
-    }
+      
 
   })
 // Start the server

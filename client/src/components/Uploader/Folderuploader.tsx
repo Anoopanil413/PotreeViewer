@@ -18,7 +18,7 @@ const FolderUpload = () => {
       return;
     }
 
-     await uploadFiles ();
+    // await uploadFiles ();
     await convertUploadedFile()
 
         alert('File uploaded and converted')
@@ -29,7 +29,6 @@ const FolderUpload = () => {
 
   const uploadFiles = async()=>{
     for (const file of files) {
-        console.log("filesonit",file)
 
         const formData = new FormData();
         formData.append('file', file.originFileObj);
@@ -41,7 +40,6 @@ const FolderUpload = () => {
             'Content-Type': 'multipart/form-data',
           },
           onUploadProgress: (progressEvent) => {
-            console.log("progressEvent",progressEvent)
             if(!progressEvent.total)return
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             setUploadProgress((prevProgress:any) => ({

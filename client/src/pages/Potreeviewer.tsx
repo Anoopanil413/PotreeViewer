@@ -63,6 +63,36 @@ const Potreeviewer = () => {
         
     },[])
 
+    
+    useEffect(()=>{
+
+      (async()=>{
+        fetch('https://ntthaaggrwaaajarhycu.supabase.co/storage/v1/object/public/Potree_viewer/folder/testinglasfile/metadata.json', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json(); 
+          })
+          .then(data => {
+            console.log("metadata.json", data);
+          })
+          .catch(error => {
+            console.error('Fetch error:', error);
+          });
+      })()
+
+
+    },[])
+    
+
+
+
     useEffect(()=>{
 
         if(loadedScript){
@@ -93,11 +123,15 @@ const Potreeviewer = () => {
         });
         
         // const url = 'http://5.9.65.151/mschuetz/potree/resources/pointclouds/helimap/360/MLS_drive1/cloud.js';
+        //const uploadeduri = 'https://ntthaaggrwaaajarhycu.supabase.co/storage/v1/object/public/Potree_viewer/folder/testinglasfile/metadata.json
+        const uploadeduri = 'https://ntthaaggrwaaajarhycu.supabase.co/storage/v1/object/public/Potree_viewer/folder/testinglasfile/metadata.json';
+
+        const uploadCloud = 'https://ntthaaggrwaaajarhycu.supabase.co/storage/v1/object/public/Potree_viewer/folder/testinglasfile/cloud.js'
+        const localFile = 'http://localhost:3008/metadata.json';
+
+
         
-        
-        
-        
-        Potree.loadPointCloud('http://localhost:3001/metadata.json','potreetest',(e: any) => {
+        Potree.loadPointCloud(localFile,'folder',(e: any) => {
             const pointcloud = e.pointcloud;
             const material = pointcloud.material;
             material.activeAttributeName = 'rgba';
