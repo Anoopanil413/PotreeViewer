@@ -36,7 +36,7 @@ Start the client:
 
 
 npm run dev
-The client will run on http://localhost:3000 (or another port if configured differently).
+The client will run on http://localhost:5173 (or another port if configured differently).
 
 Usage
 Viewing Point Clouds
